@@ -3,16 +3,56 @@
 pipeline {
     agent any
 
+
+environment {
+    registry = "sandeep4642"
+    registryrepo = "/spring-petclinic"
+    registryCreds = "dockerhub-creds"
+    dockerfile = "Dockerfile"
+    imageURI =  "${registry}${registryrepo}:${env.BUILD_NUMBER}"
+}
 stages {
 
-
-  stage('Demo') {
-  when { allOf { environment name: 'app_type', value: 'java'} }  
+    stage('Build') {
+    agent { label 'slave1'}
+    when { allOf { environment name: 'os_type', value: 'linux'} }  
       steps {
           script {
                build.mavenbuild()
 
         }
+    }
+    
+  }
+
+    stage('Docker build') {
+    agent { label 'slave1'}
+    when { allOf { environment name: 'os_type', value: 'linux'} }  
+      steps {
+          script {
+            dockerImage = build.buildDockerTaggedImage1(imageURI)
+
+        }
+    }
+    
+  }
+  stage('Docker push') {
+    agent { label 'slave1'}
+    when { allOf { environment name: 'os_type', value: 'linux'} }  
+      steps {
+        script {
+             build.dockerpush()
+            }
+    }
+    
+  }
+  stage('Remove Docker image') {
+    agent { label 'slave1'}
+    when { allOf { environment name: 'os_type', value: 'linux'} }  
+      steps {
+        script {
+            build.removedockerimage(imageURI)
+            }
     }
     
   }
